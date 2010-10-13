@@ -72,6 +72,7 @@ class Pandora(object):
     def __init__(self):
         self.rid = self.listenerId = self.authToken = None
         self.set_proxy(None)
+        self.stations = None
         
     def xmlrpc_call(self, method, args=[], url_args=True):
         if url_args is True:

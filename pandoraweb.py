@@ -8,9 +8,10 @@ render = web.template.render('templates/')
 urls = (
         '/', 'index',
         '/play/(.*)', 'play',
+        '/skip', 'skip',
         )
 app = web.application(urls, globals())
-app.pandoraObj = None
+app.pandoraObj = Pandora()
 app.player = None
 
 LoginForm = form.Form(
@@ -20,22 +21,23 @@ LoginForm = form.Form(
 
 class index:
     def GET(self):
-        if app.pandoraObj:
+        if app.pandoraObj.stations:
             return render.stationList(app.pandoraObj.stations)
-        loginForm = LoginForm()
-        return render.loginTemplate(loginForm)
+        else:
+            loginForm = LoginForm()
+            return render.loginTemplate(loginForm)
 
     def POST(self):
         loginForm = LoginForm()
         if not loginForm.validates():
-            return onBadLogin(loginForm)
+            return self.onBadLogin(loginForm)
         else:
             try:
                 app.pandoraObj = Pandora()
                 app.pandoraObj.connect(loginForm.d.username, loginForm.d.password)
                 return render.stationList(app.pandoraObj.stations)
             except PandoraError:
-                onBadLogin(loginForm)
+                self.onBadLogin(loginForm)
 
     def onBadLogin(self, loginForm):
         return render.loginTemplate(loginForm);
@@ -43,8 +45,14 @@ class index:
 class play:
     def GET(self, stationId):
         if not app.player:
-            app.gstHandler = GstHandler()
-            app.gstHandler.playStation(app.pandoraObj.get_station_by_id(stationId))
+            app.player = GstHandler()
+        app.player.playStation(app.pandoraObj.get_station_by_id(stationId))
+        return render.nowPlaying(app.pandoraObj.stations, app.player.currentSong())
+
+class skip:
+    def GET(self):
+        app.player.nextSong()
+        return render.nowPlaying(app.pandoraObj.stations, app.player.currentSong())
 
 class GstHandler:
     def __init__(self):

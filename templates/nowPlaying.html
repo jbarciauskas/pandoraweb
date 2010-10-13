@@ -1,0 +1,9 @@
+$def with (stations, currentSong)
+<p><strong>Now playing: </strong>$currentSong.title by $currentSong.artist</p>
+<p><img src='$currentSong.artRadio'/></p>
+<p><a href='/skip'>Next song</a></p>
+
+<ul>
+$for station in stations:
+    <li><a href='/play/$station.id'>$station.name</a></li>
+</ul>
