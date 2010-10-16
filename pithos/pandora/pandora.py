@@ -115,7 +115,8 @@ class Pandora(object):
                 raise PandoraNetError("Network error: %s"%e.reason[1])
             
         logging.debug(text)
-       
+        if text.find('<html>') != -1:
+            raise PandoraError(text)
         tree = etree.fromstring(text)
         
         fault = tree.findtext('fault/value/struct/member/value')
