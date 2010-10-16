@@ -1,9 +1,14 @@
 import web
 import logging
+import logging.config
+import gobject, glib
+import threading
 from web import form
 from pithos.pandora import PandoraError
 from pithos.pandora import Pandora
 from GlobalsManager import GlobalsManager
+
+logging.config.fileConfig("logging.conf")
 
 render = web.template.render('templates/')
 urls = (
@@ -51,13 +56,18 @@ class index:
 
 class play:
     def GET(self, stationId):
-        GlobalsManager.getPlayer().playStation(GlobalsManager.getPandoraObj().get_station_by_id(stationId))
-        return render.nowPlaying(GlobalsManager.getPandoraObj().stations, GlobalsManager.getPlayer().currentSong())
+        if stationId:
+            GlobalsManager.getPlayer().playStation(GlobalsManager.getPandoraObj().get_station_by_id(stationId))
+
+        if(GlobalsManager.getPlayer().getCurrentSong()):
+            return render.nowPlaying(GlobalsManager.getPandoraObj().stations, GlobalsManager.getPlayer().getCurrentSong())
+        else:
+            return render.stationList(GlobalsManager.getPandoraObj().stations)
 
 class skip:
     def GET(self):
         GlobalsManager.getPlayer().nextSong()
-        return render.nowPlaying(GlobalsManager.getPandoraObj().stations, GlobalsManager.getPlayer().currentSong())
+        raise web.seeother('/play/')
 
 class logout:
     def GET(self):
@@ -67,4 +77,9 @@ class logout:
 
 if __name__=="__main__":
     web.internalerror = web.debugerror
+    gobject.threads_init()
+    loop = glib.MainLoop()
+    dbusThread = threading.Thread(target=loop.run)
+    dbusThread.daemon = True
+    dbusThread.start()
     app.run()

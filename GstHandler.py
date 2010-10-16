@@ -1,16 +1,19 @@
 import gst
+import logging
 from pithos.pandora import *
 
+
 class GstHandler:
+
     def __init__(self):
-        self.player = gst.element_factory_make("playbin", "player")
+        self.player = gst.element_factory_make("playbin2", "player")
         bus = self.player.get_bus()
         bus.add_signal_watch()
         bus.connect("message", self.onMessage)
 
         self.time_format = gst.Format(gst.FORMAT_TIME)
         self.bufferPercent = None
-        self.currentSongIndex = 0
+        self.currentSong = None
         self.playlist = None
         self.playing = False
         self.station = None
@@ -19,49 +22,33 @@ class GstHandler:
     def playStation(self, station):
         if not self.station or station.id != self.station.id:
             self.station = station
-            self.playlist = station.get_playlist()
+            self.playlist = Playlist(station)
             self.nextSong()
 
-    def currentSong(self):
-        if self.playlist is not None and self.currentSongIndex is not None:
-            return self.playlist[self.currentSongIndex]
-        return None
-
-    def startSong(self, song_index):
-        prev = self.currentSong()
-        self.stop()
-        self.currentSongIndex = song_index
-        if not self.currentSong().is_still_valid():
-            self.currentSong().message = "Playlist expired"
-            return self.nextSong()
-        if self.currentSong().tired or self.currentSong().rating == RATE_BAN:
-            return self.nextSong()
-        logging.info("Starting song: index = %i"%(song_index))
-        self.buffer_percent = 100
-        self.player.set_property("uri", self.currentSong().audioUrl)
-        self.play()
-        self.playcount += 1
-
     def nextSong(self):
-        if self.checkForEndOfPlaylist():
-            self.startSong(0)
-        else:
-            self.startSong(self.currentSongIndex + 1)
+        logging.info('Changing songs')
+        prev = self.playlist.getCurrentSong()
+        self.stop()
+        self.currentSong = self.playlist.getNextSong()
+        if not self.currentSong.is_still_valid():
+            return self.nextSong()
+        if self.currentSong.tired or self.currentSong.rating == RATE_BAN:
+            return self.nextSong()
+        self.buffer_percent = 100
+        self.player.set_property("uri", self.currentSong.audioUrl)
+        self.play()
 
-    def checkForEndOfPlaylist(self):
-        songs_remaining = len(self.playlist) - self.currentSongIndex
-        if not self.currentSong() or songs_remaining <= 0:
-            self.playlist = self.station.get_playlist()
-            return True
-        return False
+    def getCurrentSong(self):
+        return self.currentSong
 
     def play(self):
         if not self.playing:
+            logging.info('Starting to play ' + self.currentSong.title)
             self.playing = True
             self.player.set_state(gst.STATE_PLAYING)
 
     def stop(self):
-        prev = self.currentSong()
+        prev = self.currentSong
         if prev and prev.start_time:
             prev.finished = True
             try:
@@ -75,6 +62,7 @@ class GstHandler:
 
     def onMessage(self, bus, message):
         t = message.type
+        logging.info('Received message ' + str(t))
         if t == gst.MESSAGE_EOS:
             self.nextSong()
         elif message.type == gst.MESSAGE_BUFFERING:
@@ -87,7 +75,6 @@ class GstHandler:
         elif t == gst.MESSAGE_ERROR:
             err, debug = message.parse_error()
             logging.error("Gstreamer error: %s, %s" % (err, debug))
-            self.currentSong().message = "Error: "+str(err)
             self.gstreamer_error = str(err)
             self.gstreamer_errorcount_1 += 1
             self.nextSong()
