@@ -7,8 +7,7 @@ import json
 import datetime
 
 from web import form
-from pithos.pandora import PandoraError
-from pithos.pandora import Pandora
+from pithos.pandora import *
 from GlobalsManager import GlobalsManager
 
 logging.config.fileConfig("logging.conf")
@@ -16,6 +15,8 @@ logging.config.fileConfig("logging.conf")
 render = web.template.render('templates/')
 urls = (
         '/', 'index',
+        '/togglePause', 'togglePause',
+        '/rate/(.*)', 'rate',
         '/status', 'status',
         '/login', 'login',
         '/play/(.*)', 'play',
@@ -60,14 +61,27 @@ class index:
 
 class status:
     def GET(self):
-        return json.dumps(GlobalsManager.getPlayer().getCurrentSong())
+        return json.dumps(GlobalsManager.getPlayer().getCurrentSongAsDict())
 
 class play:
     def GET(self, stationId):
         if stationId:
             GlobalsManager.getPlayer().playStation(GlobalsManager.getPandoraObj().get_station_by_id(stationId))
 
-        return render.nowPlaying(GlobalsManager.getPandoraObj().stations, GlobalsManager.getPlayer().getCurrentSong())
+        return render.nowPlaying(GlobalsManager.getPandoraObj().stations, GlobalsManager.getPlayer().getCurrentSongAsDict())
+
+class togglePause:
+    def GET(self):
+        if GlobalsManager.getPlayer().playing:
+            GlobalsManager.getPlayer().pause()
+        else:
+            GlobalsManager.getPlayer().play()
+
+class rate:
+    def GET(self, rating):
+        GlobalsManager.getPlayer().getCurrentSongObj().rate(rating)
+        if(rating == RATE_BAN):
+            GlobalsManager.getPlayer().nextSong()
 
 class skip:
     def GET(self):

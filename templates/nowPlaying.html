@@ -5,8 +5,10 @@ $def with (stations, currentSong)
 <html xmlns="http://www.w3.org/1999/xhtml">
     <head>
         <link href="/static/style.css" type="text/css" rel="Stylesheet" />
-        <script type='text/javascript' src='http://ajax.googleapis.com/ajax/libs/jquery/1.4.2/jquery.min.js'></script>
-        <script type='text/javascript'>
+        <link href="http://ajax.googleapis.com/ajax/libs/jqueryui/1.8.5/themes/start/jquery-ui.css" type="text/css" rel="Stylesheet" />
+        <script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.4.2/jquery.min.js"></script>
+        <script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jqueryui/1.8.5/jquery-ui.min.js"></script>
+        <script type="text/javascript">
             var timeFormatter = (function() {
                 return {
                     getSongProgress: function(position, duration)
@@ -21,6 +23,32 @@ $def with (stations, currentSong)
                     }
                 };
             }());
+            var rater = (function() {
+                return {
+                    handleRating: function(rating)
+                    {
+                        if(rating == "ban") {
+                            $$("#likeButton").button("disable");
+                            $$("#banButton").button("disable");
+                        }
+                        else if(rating == "like") {
+                            $$("#banButton").button("option", "label", "Ban");
+                            $$("#banButton").button("enable");
+                            $$("#banButton").attr("href", "/rate/ban");
+                            $$("#likeButton").button("option", "label", "Liked");
+                            $$("#likeButton").button("disable");
+                        }
+                        else {
+                            $$("#banButton").button("option", "label", "Ban");
+                            $$("#banButton").attr("href", "/rate/ban");
+                            $$("#likeButton").button("option", "label", "Like");
+                            $$("#likeButton").attr("href", "/rate/like");
+                            $$("#likeButton").button("enable");
+                            $$("#banButton").button("enable");
+                        }
+                    }
+                };
+            }());
             $$(document).ready(function() {
                 // do stuff when DOM is ready
                 $$(function ()
@@ -31,58 +59,113 @@ $def with (stations, currentSong)
                     var albumImage = $$("#album-image");
                     var positionSpan = $$("#song-position");
 
+                    PandoraWeb = new Object();
+                    PandoraWeb.currentSongId = 0;
                     // this function will run each 1000 ms until stopped with clearInterval()
                     var i = setInterval(function ()
                     {
                         $$.ajax(
                         {
-                            url: '/status', // JSON_URL is a global variable
-                            dataType: 'json',
+                            url: "/status", // JSON_URL is a global variable
+                            dataType: "json",
                             success: function (currentSong)
                             {
                                 positionSpan.text(timeFormatter.getSongProgress(currentSong.position, currentSong.duration));
+                                $$(function() {
+                                    $$( "#progressbar" ).progressbar({
+                                        value: currentSong.position / currentSong.duration * 100,
+                                    });
+                                });
                                 if(currentSong.id != PandoraWeb.currentSongId)
                                 {
                                     PandoraWeb.currentSongId = currentSong.id;
+                                    rater.handleRating(currentSong.rating);
                                     songTitleSpan.text(currentSong.title);
                                     artistSpan.text(currentSong.artist);
-                                    albumImage.attr('src', currentSong.albumUrl);
+                                    albumImage.attr("src", currentSong.albumUrl);
                                 }
                             },
                         });
                     }, 1000);
                 });
+                $$(function() {
+                    $$(".jqueryButton").button();
+                    $$("#banButton").click(function(event)
+                    {
+                        $$.ajax(
+                        {
+                            url: $$("#banButton").attr("href"),
+                        });
+                        if($$(event.target).text() == "Ban")
+                        {
+                            rater.handleRating("ban");
+                        }
+                        else
+                        {
+                            rater.handleRating(null);
+                        }
+                        return false;
+                    });
 
+                    $$("#likeButton").click(function(event)
+                    {
+                        $$.ajax(
+                        {
+                            url: $$("#likeButton").attr("href"),
+                        });
+                        if($$(event.target).text() == "Like")
+                        {
+                            rater.handleRating("like");
+                        }
+                        else
+                        {
+                            rater.handleRating(null);
+                        }
+                        return false;
+                    });
+
+                    $$("#pauseButton").click(function(event)
+                    {
+                        $$.ajax(
+                        {
+                            url: "/togglePause",
+                        });
+                        $$(event.target).text() == "Pause" ? $$(event.target).text("Resume") : $$(event.target).text("Pause");
+                        return false;
+                    });
+                });
             });
         </script>
     </head>
     <body>
 
 $def getStationStyle(station):
-    $if station.id == currentSong['stationId']:
+    $if currentSong != None and station.id == currentSong['stationId']:
         class=selected
 
-<p>
-    <a href='/logout'>Logout</a>
-    <h3>Station list</h3>
-</p>
+<a href="/logout">Logout</a>
+<h3>Station list</h3>
 
 <div class="stationList">
     <ul>
     $for station in stations:
-        <li><a href='/play/$station.id' $getStationStyle(station) >$station.name</a></li>
+        <li><a href="/play/$station.id" $getStationStyle(station) >$station.name</a></li>
     </ul>
 </div>
 
 $if currentSong != None:
-    <script type='text/javascript'>
-        PandoraWeb = new Object();
-        PandoraWeb.currentSongId = "$currentSong['id']";
+    <script type="text/javascript">
     </script>
     <div class="nowPlaying">
         <p><strong>Now playing: </strong><span id="song-title">$currentSong['title']</span> by <span id="artist">$currentSong['artist']</span></p>
         <p><img id="album-image" src="$currentSong['albumUrl']"/></p>
-        <p><a href='/skip'>Next song</a></p>
+        <p>
+            <a href="/rate/ban" id="banButton" class="jqueryButton">Ban</a>
+            <a href="/rate/like" id="likeButton" class="jqueryButton">Like</a>
+            <a href="/togglePause" id="pauseButton" class="jqueryButton">Pause</a>
+            <a href="/skip" class="jqueryButton">Next</a>
+        </p>
+        <div id="progressbar"></div>
         <p><span id="song-position"></span></p>
     </div>
 

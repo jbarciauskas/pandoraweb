@@ -45,3 +45,7 @@ body {
     background-color: #9cf;
     color: #fff;
 }
+
+#progressbar {
+    height:10px;
+}

@@ -36,7 +36,7 @@ class GstHandler:
         self.player.set_property("uri", self.currentSong.audioUrl)
         self.play()
 
-    def getCurrentSong(self):
+    def getCurrentSongAsDict(self):
         if self.currentSong:
             songDict = self.currentSong.getDict()
             songDict['duration'] = self.getDuration()
@@ -45,11 +45,19 @@ class GstHandler:
         else:
             return None
 
+    def getCurrentSongObj(self):
+        return self.currentSong
+
     def play(self):
         if not self.playing:
             logging.info('Starting to play ' + self.currentSong.title)
             self.playing = True
             self.player.set_state(gst.STATE_PLAYING)
+
+    def pause(self):
+        if self.playing:
+            self.playing = False
+            self.player.set_state(gst.STATE_PAUSED)
 
     def stop(self):
         prev = self.currentSong

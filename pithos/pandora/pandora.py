@@ -283,14 +283,17 @@ class Song(object):
         self.playlist_time = time.time()
 
     def getDict(self):
-        return { 'stationId' : self.stationId, 'album' : self.album, 'id'    : self.musicId, 'artist': self.artist, 'title' : self.title, 'albumUrl' : self.artRadio }
+        return { 'stationId' : self.stationId, 'album' : self.album, 'id'    : self.identity, 'artist': self.artist, 'title' : self.title, 'albumUrl' : self.artRadio, 'rating' : self.rating }
 
     @property
     def station(self):
         return self.pandora.get_station_by_id(self.stationId)
 
     def rate(self, rating):
+        if not rating:
+            rating = None
         if self.rating != rating:
+            logging.info("Changing rating to '" + str(rating) + "'")
             self.station.transformIfShared()
             self.pandora.add_feedback(self.stationId, self.musicId, rating, self.userSeed, songType=self.songType)
             self.rating = rating
