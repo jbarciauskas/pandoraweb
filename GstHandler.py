@@ -1,5 +1,6 @@
 import gst
 import logging
+import datetime
 from pithos.pandora import *
 
 
@@ -12,12 +13,10 @@ class GstHandler:
         bus.connect("message", self.onMessage)
 
         self.time_format = gst.Format(gst.FORMAT_TIME)
-        self.bufferPercent = None
         self.currentSong = None
         self.playlist = None
         self.playing = False
         self.station = None
-        self.playcount = 0
 
     def playStation(self, station):
         if not self.station or station.id != self.station.id:
@@ -27,19 +26,24 @@ class GstHandler:
 
     def nextSong(self):
         logging.info('Changing songs')
-        prev = self.playlist.getCurrentSong()
+        prev = self.playlist.currentSong
         self.stop()
         self.currentSong = self.playlist.getNextSong()
         if not self.currentSong.is_still_valid():
             return self.nextSong()
         if self.currentSong.tired or self.currentSong.rating == RATE_BAN:
             return self.nextSong()
-        self.buffer_percent = 100
         self.player.set_property("uri", self.currentSong.audioUrl)
         self.play()
 
     def getCurrentSong(self):
-        return self.currentSong
+        if self.currentSong:
+            songDict = self.currentSong.getDict()
+            songDict['duration'] = str(datetime.timedelta(seconds=self.getDuration()))
+            songDict['position'] = str(datetime.timedelta(seconds=self.getPosition()))
+            return songDict
+        else:
+            return None
 
     def play(self):
         if not self.playing:
@@ -52,22 +56,33 @@ class GstHandler:
         if prev and prev.start_time:
             prev.finished = True
             try:
-                prev.duration = self.player.query_duration(self.time_format, None)[0] / 1000000000
-                prev.position = self.player.query_position(self.time_format, None)[0] / 1000000000
+                prev.duration = self.getDuration()
+                prev.position = self.getPosition()
             except gst.QueryError:
                 prev.duration = prev.position = None
 
         self.playing = False
         self.player.set_state(gst.STATE_NULL)
 
+    def getDuration(self):
+        try:
+            return self.player.query_duration(self.time_format, None)[0] / 1000000000
+        except gst.QueryError:
+            return 0
+
+    def getPosition(self):
+        try:
+            return self.player.query_position(self.time_format, None)[0] / 1000000000
+        except gst.QueryError:
+            return 0
+
     def onMessage(self, bus, message):
         t = message.type
-        logging.info('Received message ' + str(t))
+        logging.debug('Received message ' + str(t))
         if t == gst.MESSAGE_EOS:
             self.nextSong()
         elif message.type == gst.MESSAGE_BUFFERING:
             percent = message.parse_buffering()
-            self.buffer_percent = percent
             if percent < 100:
                 self.player.set_state(gst.STATE_PAUSED)
             elif self.playing:

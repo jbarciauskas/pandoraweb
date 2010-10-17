@@ -1,10 +1,63 @@
 $def with (stations, currentSong)
-<p><strong>Now playing: </strong>$currentSong.title by $currentSong.artist</p>
-<p><img src='$currentSong.artRadio'/></p>
-<p><a href='/skip'>Next song</a></p>
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" 
+        "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+    <head>
+        <script type='text/javascript' src='http://ajax.googleapis.com/ajax/libs/jquery/1.4.2/jquery.min.js'></script>
+        <script type='text/javascript'>
+            $$(document).ready(function() {
+                // do stuff when DOM is ready
+                    $$(function ()
+                    {
+                    // reference cache to speed up the process of querying for the status element
+                        var songTitleSpan = $$("#song-title");
+                        var artistSpan = $$("#artist");
+                        var albumImage = $$("#album-image");
+                        var positionSpan = $$("#song-position");
 
-<ul>
+                        // this function will run each 1000 ms until stopped with clearInterval()
+                        var i = setInterval(function ()
+                        {
+                            $$.ajax(
+                            {
+                                url: '/status', // JSON_URL is a global variable
+                                dataType: 'json',
+                                success: function (currentSong)
+                                {
+                                    positionSpan.text(currentSong.position + ' / ' + currentSong.duration);
+                                    if(currentSong.id != PandoraWeb.currentSongId)
+                                    {
+                                        PandoraWeb.currentSongId = currentSong.id;
+                                        songTitleSpan.text(currentSong.title);
+                                        artistSpan.text(currentSong.artist);
+                                        albumImage.attr('src', currentSong.albumUrl);
+                                    }
+
+                                }
+                            });
+                        }, 1000);
+                    });
+            });
+        </script>
+    </head>
+    <body>
+$if currentSong != None:
+    <script type='text/javascript'>
+        PandoraWeb = new Object();
+        PandoraWeb.currentSongId = "$currentSong['id']";
+    </script>
+    <div id="nowPlaying">
+        <p><strong>Now playing: </strong><span id="song-title">$currentSong['title']</span> by <span id="artist">$currentSong['artist']</span></p>
+        <p><img id="album-image" src="$currentSong['albumUrl']"/></p>
+        <p><a href='/skip'>Next song</a></p>
+        <p><span id="song-position">$currentSong['position'] / $currentSong['duration']</span></p>
+    </div>
+
+<ul id="stationList">
 $for station in stations:
     <li><a href='/play/$station.id'>$station.name</a></li>
 </ul>
 <p><a href='/logout'>Logout</a></p>
+</body>
+</html>

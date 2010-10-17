@@ -282,6 +282,9 @@ class Song(object):
         self.finished = False
         self.playlist_time = time.time()
 
+    def getDict(self):
+        return { 'album' : self.album, 'id'    : self.musicId, 'artist': self.artist, 'title' : self.title, 'albumUrl' : self.artRadio }
+
     @property
     def station(self):
         return self.pandora.get_station_by_id(self.stationId)

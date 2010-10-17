@@ -3,6 +3,9 @@ import logging
 import logging.config
 import gobject, glib
 import threading
+import json
+import datetime
+
 from web import form
 from pithos.pandora import PandoraError
 from pithos.pandora import Pandora
@@ -13,6 +16,7 @@ logging.config.fileConfig("logging.conf")
 render = web.template.render('templates/')
 urls = (
         '/', 'index',
+        '/status', 'status',
         '/login', 'login',
         '/play/(.*)', 'play',
         '/skip', 'skip',
@@ -52,17 +56,18 @@ class login:
 
 class index:
     def GET(self):
-        return render.stationList(GlobalsManager.getPandoraObj().stations)
+        raise web.seeother('/play/')
+
+class status:
+    def GET(self):
+        return json.dumps(GlobalsManager.getPlayer().getCurrentSong())
 
 class play:
     def GET(self, stationId):
         if stationId:
             GlobalsManager.getPlayer().playStation(GlobalsManager.getPandoraObj().get_station_by_id(stationId))
 
-        if(GlobalsManager.getPlayer().getCurrentSong()):
-            return render.nowPlaying(GlobalsManager.getPandoraObj().stations, GlobalsManager.getPlayer().getCurrentSong())
-        else:
-            return render.stationList(GlobalsManager.getPandoraObj().stations)
+        return render.nowPlaying(GlobalsManager.getPandoraObj().stations, GlobalsManager.getPlayer().getCurrentSong())
 
 class skip:
     def GET(self):
