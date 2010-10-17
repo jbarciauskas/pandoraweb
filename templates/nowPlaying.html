@@ -4,60 +4,87 @@ $def with (stations, currentSong)
         "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
     <head>
+        <link href="/static/style.css" type="text/css" rel="Stylesheet" />
         <script type='text/javascript' src='http://ajax.googleapis.com/ajax/libs/jquery/1.4.2/jquery.min.js'></script>
         <script type='text/javascript'>
+            var timeFormatter = (function() {
+                return {
+                    getSongProgress: function(position, duration)
+                    {
+                        return this.formatTime(position) + " / " + this.formatTime(duration);
+                    },
+                    formatTime: function(time) {
+                        var minutes = Math.floor(time / 60);
+                        var seconds = time % 60;
+                        seconds = seconds < 10 ? "0" + seconds : seconds;
+                        return minutes + ":" + seconds;
+                    }
+                };
+            }());
             $$(document).ready(function() {
                 // do stuff when DOM is ready
-                    $$(function ()
-                    {
+                $$(function ()
+                {
                     // reference cache to speed up the process of querying for the status element
-                        var songTitleSpan = $$("#song-title");
-                        var artistSpan = $$("#artist");
-                        var albumImage = $$("#album-image");
-                        var positionSpan = $$("#song-position");
+                    var songTitleSpan = $$("#song-title");
+                    var artistSpan = $$("#artist");
+                    var albumImage = $$("#album-image");
+                    var positionSpan = $$("#song-position");
 
-                        // this function will run each 1000 ms until stopped with clearInterval()
-                        var i = setInterval(function ()
+                    // this function will run each 1000 ms until stopped with clearInterval()
+                    var i = setInterval(function ()
+                    {
+                        $$.ajax(
                         {
-                            $$.ajax(
+                            url: '/status', // JSON_URL is a global variable
+                            dataType: 'json',
+                            success: function (currentSong)
                             {
-                                url: '/status', // JSON_URL is a global variable
-                                dataType: 'json',
-                                success: function (currentSong)
+                                positionSpan.text(timeFormatter.getSongProgress(currentSong.position, currentSong.duration));
+                                if(currentSong.id != PandoraWeb.currentSongId)
                                 {
-                                    positionSpan.text(currentSong.position + ' / ' + currentSong.duration);
-                                    if(currentSong.id != PandoraWeb.currentSongId)
-                                    {
-                                        PandoraWeb.currentSongId = currentSong.id;
-                                        songTitleSpan.text(currentSong.title);
-                                        artistSpan.text(currentSong.artist);
-                                        albumImage.attr('src', currentSong.albumUrl);
-                                    }
-
+                                    PandoraWeb.currentSongId = currentSong.id;
+                                    songTitleSpan.text(currentSong.title);
+                                    artistSpan.text(currentSong.artist);
+                                    albumImage.attr('src', currentSong.albumUrl);
                                 }
-                            });
-                        }, 1000);
-                    });
+                            },
+                        });
+                    }, 1000);
+                });
+
             });
         </script>
     </head>
     <body>
+
+$def getStationStyle(station):
+    $if station.id == currentSong['stationId']:
+        class=selected
+
+<p>
+    <a href='/logout'>Logout</a>
+    <h3>Station list</h3>
+</p>
+
+<div class="stationList">
+    <ul>
+    $for station in stations:
+        <li><a href='/play/$station.id' $getStationStyle(station) >$station.name</a></li>
+    </ul>
+</div>
+
 $if currentSong != None:
     <script type='text/javascript'>
         PandoraWeb = new Object();
         PandoraWeb.currentSongId = "$currentSong['id']";
     </script>
-    <div id="nowPlaying">
+    <div class="nowPlaying">
         <p><strong>Now playing: </strong><span id="song-title">$currentSong['title']</span> by <span id="artist">$currentSong['artist']</span></p>
         <p><img id="album-image" src="$currentSong['albumUrl']"/></p>
         <p><a href='/skip'>Next song</a></p>
-        <p><span id="song-position">$currentSong['position'] / $currentSong['duration']</span></p>
+        <p><span id="song-position"></span></p>
     </div>
 
-<ul id="stationList">
-$for station in stations:
-    <li><a href='/play/$station.id'>$station.name</a></li>
-</ul>
-<p><a href='/logout'>Logout</a></p>
 </body>
 </html>

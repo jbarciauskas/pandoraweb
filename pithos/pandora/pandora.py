@@ -283,7 +283,7 @@ class Song(object):
         self.playlist_time = time.time()
 
     def getDict(self):
-        return { 'album' : self.album, 'id'    : self.musicId, 'artist': self.artist, 'title' : self.title, 'albumUrl' : self.artRadio }
+        return { 'stationId' : self.stationId, 'album' : self.album, 'id'    : self.musicId, 'artist': self.artist, 'title' : self.title, 'albumUrl' : self.artRadio }
 
     @property
     def station(self):

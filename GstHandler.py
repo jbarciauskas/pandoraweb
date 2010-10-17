@@ -39,8 +39,8 @@ class GstHandler:
     def getCurrentSong(self):
         if self.currentSong:
             songDict = self.currentSong.getDict()
-            songDict['duration'] = str(datetime.timedelta(seconds=self.getDuration()))
-            songDict['position'] = str(datetime.timedelta(seconds=self.getPosition()))
+            songDict['duration'] = self.getDuration()
+            songDict['position'] = self.getPosition()
             return songDict
         else:
             return None

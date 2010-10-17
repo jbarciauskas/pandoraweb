@@ -1,0 +1,47 @@
+body {
+    font-size:small;
+    font-family: Arial, Helvetica, sans-serif;
+}
+.nowPlaying {
+    float: left;
+    margin-left: 10px;
+}
+
+.stationList {
+    float: left;
+    width:150px; 
+}
+
+.stationList { width: 250px; }
+
+.stationList ul
+{
+    margin-left: 0;
+    padding-left: 0;
+    list-style-type: none;
+}
+
+.stationList a
+{
+    display: block;
+    padding: 3px;
+    width: 210px;
+    background-color: light-gray;
+    border-bottom: 1px solid #ccc;
+}
+
+.stationList a:link, .stationList a:visited
+{
+    color: black;
+    text-decoration: none;
+}
+
+.stationList a:hover
+{
+    background-color: #369;
+    color: #fff;
+}
+.stationList .selected {
+    background-color: #9cf;
+    color: #fff;
+}
