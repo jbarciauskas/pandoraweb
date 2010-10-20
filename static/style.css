@@ -41,7 +41,7 @@ body {
     background-color: #369;
     color: #fff;
 }
-.stationList .selected {
+.stationList .stationSelected {
     background-color: #9cf;
     color: #fff;
 }

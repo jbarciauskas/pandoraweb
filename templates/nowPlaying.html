@@ -60,7 +60,7 @@ $def with (stations, currentSong)
                     var positionSpan = $$("#song-position");
 
                     PandoraWeb = new Object();
-                    PandoraWeb.currentSongId = 0;
+                    PandoraWeb.currentSong = new Object();
                     // this function will run each 1000 ms until stopped with clearInterval()
                     var i = setInterval(function ()
                     {
@@ -68,18 +68,36 @@ $def with (stations, currentSong)
                         {
                             url: "/status", // JSON_URL is a global variable
                             dataType: "json",
+                            error: function() {
+                                window.location.href = '/';
+                            },
                             success: function (currentSong)
                             {
+                                if(!currentSong) 
+                                {
+                                    return;
+                                }
+                                if(currentSong && !songTitleSpan.length) {
+                                    window.location.href = '/play/';
+                                    return;
+                                }
                                 positionSpan.text(timeFormatter.getSongProgress(currentSong.position, currentSong.duration));
                                 $$(function() {
                                     $$( "#progressbar" ).progressbar({
                                         value: currentSong.position / currentSong.duration * 100,
                                     });
                                 });
-                                if(currentSong.id != PandoraWeb.currentSongId)
+                                if(currentSong.rating != PandoraWeb.currentSong.rating)
                                 {
-                                    PandoraWeb.currentSongId = currentSong.id;
                                     rater.handleRating(currentSong.rating);
+                                }
+                                if(currentSong.stationId != PandoraWeb.currentSong.stationId) {
+                                    $$('.stationSelected').removeClass('stationSelected');
+                                    $$('#station-' + currentSong.stationId).addClass('stationSelected');
+                                }
+                                if(currentSong.id != PandoraWeb.currentSong.id)
+                                {
+                                    PandoraWeb.currentSong = currentSong;
                                     songTitleSpan.text(currentSong.title);
                                     artistSpan.text(currentSong.artist);
                                     albumImage.attr("src", currentSong.albumUrl);
@@ -141,7 +159,7 @@ $def with (stations, currentSong)
 
 $def getStationStyle(station):
     $if currentSong != None and station.id == currentSong['stationId']:
-        class=selected
+        class=stationSelected
 
 <a href="/logout">Logout</a>
 <h3>Station list</h3>
@@ -149,7 +167,7 @@ $def getStationStyle(station):
 <div class="stationList">
     <ul>
     $for station in stations:
-        <li><a href="/play/$station.id" $getStationStyle(station) >$station.name</a></li>
+        <li><a href="/play/$station.id" id="station-$station.id" $getStationStyle(station) >$station.name</a></li>
     </ul>
 </div>
 

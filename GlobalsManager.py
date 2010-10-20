@@ -9,6 +9,7 @@ class GlobalsManager:
         return self.pandoraObj
 
     def resetPandoraObj(self):
+        self.player.currentSong = None
         self.pandoraObj = Pandora()
 
     def getPlayer(self):
