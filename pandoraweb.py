@@ -61,6 +61,7 @@ class index:
 
 class status:
     def GET(self):
+	web.header('Content-Type', 'application/json')
         return json.dumps(GlobalsManager.getPlayer().getCurrentSongAsDict())
 
 class play:

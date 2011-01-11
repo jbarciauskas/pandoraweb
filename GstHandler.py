@@ -7,7 +7,7 @@ from pithos.pandora import *
 class GstHandler:
 
     def __init__(self):
-        self.player = gst.element_factory_make("playbin2", "player")
+        self.player = gst.element_factory_make("playbin", "player")
         bus = self.player.get_bus()
         bus.add_signal_watch()
         bus.connect("message", self.onMessage)

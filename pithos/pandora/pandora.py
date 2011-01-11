@@ -22,7 +22,7 @@ from collections import deque
 from pithos.pandora.xmlrpc import *
 from pithos.pandora.blowfish import Blowfish
 
-PROTOCOL_VERSION = "28"
+PROTOCOL_VERSION = "29"
 RPC_URL = "http://www.pandora.com/radio/xmlrpc/v"+PROTOCOL_VERSION+"?"
 USER_AGENT = "Pithos/0.2"
 HTTP_TIMEOUT = 30
@@ -35,9 +35,9 @@ RATE_NONE = None
 PLAYLIST_VALIDITY_TIME = 60*60*3
 
 class PandoraError(IOError):
-    def __init__(self, message, status=None):
+    def __init__(self, msg, status=None):
         self.status = status
-        self.message = message
+        self.msg = msg
 
 class PandoraAuthTokenInvalid(PandoraError): pass
 class PandoraNetError(PandoraError): pass
@@ -123,6 +123,7 @@ class Pandora(object):
         fault = tree.findtext('fault/value/struct/member/value')
         if fault:
             code, msg = fault.split('|')[2:]
+            print msg
             if code == 'AUTH_INVALID_TOKEN':
                 raise PandoraAuthTokenInvalid(msg)
             else:
