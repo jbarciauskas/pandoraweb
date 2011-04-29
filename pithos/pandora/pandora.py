@@ -22,7 +22,7 @@ from collections import deque
 from pithos.pandora.xmlrpc import *
 from pithos.pandora.blowfish import Blowfish
 
-PROTOCOL_VERSION = "29"
+PROTOCOL_VERSION = "30"
 RPC_URL = "http://www.pandora.com/radio/xmlrpc/v"+PROTOCOL_VERSION+"?"
 USER_AGENT = "Pithos/0.2"
 HTTP_TIMEOUT = 30
