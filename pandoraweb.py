@@ -49,8 +49,9 @@ class login:
             try:
                 GlobalsManager.getPandoraObj().connect(loginForm.d.username, loginForm.d.password)
                 raise web.seeother('/')
-            except PandoraError:
-                self.onBadLogin(loginForm)
+            except PandoraError as pandoraErr:
+		logging.error(pandoraErr.msg)
+		return pandoraErr.msg
 
     def onBadLogin(self, loginForm):
         return render.loginTemplate(loginForm);
