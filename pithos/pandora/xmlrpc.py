@@ -17,13 +17,15 @@
 from cgi import escape
 
 def xmlrpc_value(v):
-    if isinstance(v, basestring):
+    if isinstance(v, str):
+        return "<value><string>%s</string></value>"%escape(v)
+    elif isinstance(v, unicode):
         return "<value><string>%s</string></value>"%escape(v)
     elif v is True:
         return "<value><boolean>1</boolean></value>"
     elif v is False:
         return "<value><boolean>0</boolean></value>"
-    elif isinstance(v, int):
+    elif isinstance(v, int) or isinstance(v, long):
         return "<value><int>%i</int></value>"%v
     elif isinstance(v, list):
         return "<value><array><data>%s</data></array></value>"%("".join([xmlrpc_value(i) for i in v]))
@@ -36,16 +38,16 @@ def xmlrpc_make_call(method, args):
 
 def xmlrpc_parse_value(tree):
     b = tree.findtext('boolean')
-    if b:
+    if b is not None:
         return bool(int(b))
     i = tree.findtext('int')
-    if i:
+    if i is not None:
         return int(i)
     a = tree.find('array')
-    if a:
+    if a is not None:
         return xmlrpc_parse_array(a)
     s = tree.find('struct')
-    if s:
+    if s is not None:
         return xmlrpc_parse_struct(s)
     return tree.text
  

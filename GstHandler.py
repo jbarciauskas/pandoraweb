@@ -1,6 +1,7 @@
 import gst
 import logging
 import datetime
+from collections import deque
 from pithos.pandora import *
 
 
@@ -21,14 +22,14 @@ class GstHandler:
     def playStation(self, station):
         if not self.station or station.id != self.station.id:
             self.station = station
-            self.playlist = Playlist(station)
+            self.playlist = deque(station.get_playlist())
             self.nextSong()
 
     def nextSong(self):
         logging.info('Changing songs')
-        prev = self.playlist.currentSong
+        prev = self.playlist[0]
         self.stop()
-        self.currentSong = self.playlist.getNextSong()
+        self.currentSong = self.playlist.popleft()
         if not self.currentSong.is_still_valid():
             return self.nextSong()
         if self.currentSong.tired or self.currentSong.rating == RATE_BAN:
