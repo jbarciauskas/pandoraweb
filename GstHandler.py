@@ -22,14 +22,18 @@ class GstHandler:
     def playStation(self, station):
         if not self.station or station.id != self.station.id:
             self.station = station
-            self.playlist = deque(station.get_playlist())
+            self.playlist = deque(self.station.get_playlist())
             self.nextSong()
 
     def nextSong(self):
         logging.info('Changing songs')
-        prev = self.playlist[0]
+        prev = self.currentSong
         self.stop()
-        self.currentSong = self.playlist.popleft()
+        try:
+            self.currentSong = self.playlist.popleft()
+        except IndexError:
+            self.playlist = deque(self.station.get_playlist())
+            self.currentSong = self.playlist.popleft()
         if not self.currentSong.is_still_valid():
             return self.nextSong()
         if self.currentSong.tired or self.currentSong.rating == RATE_BAN:
